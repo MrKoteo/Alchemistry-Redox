@@ -1,4 +1,4 @@
-# <img src="src/main/resources/assets/alchemistry/textures/logo.png" alt="Logo" height="42" width="42"> Alchemistry - Redox
+# <img src="https://raw.githubusercontent.com/Ender-Development/Alchemistry-Redox/refs/heads/master/src/main/resources/assets/alchemistry/textures/logo.png" alt="Logo" height="42" width="42"> Alchemistry - Redox
 
 <!---freshmark description
 output = [
