@@ -1,0 +1,83 @@
+package org.ender_development.alchemistry.tiles
+
+import net.minecraft.item.ItemStack
+import net.minecraft.nbt.NBTTagCompound
+import net.minecraftforge.fluids.Fluid
+import org.ender_development.alchemistry.Alchemistry
+import org.ender_development.alchemistry.ConfigHandler
+import org.ender_development.alchemistry.recipes.LiquifierRecipe
+import org.ender_development.alchemistry.recipes.register.LiquifierRegister
+import org.ender_development.catalyx.tiles.BaseMachineTile
+import org.ender_development.catalyx.tiles.helper.EnergyTileImpl
+import org.ender_development.catalyx.tiles.helper.IEnergyTile
+import org.ender_development.catalyx.tiles.helper.IFluidTile
+import org.ender_development.catalyx.tiles.helper.TileStackHandler
+import org.ender_development.catalyx.utils.FluidTankUtils
+import org.ender_development.catalyx.utils.extensions.get
+import org.ender_development.catalyx.utils.extensions.mapUnique
+
+class TileLiquifier : BaseMachineTile<LiquifierRecipe>(Alchemistry), IFluidTile, IEnergyTile by EnergyTileImpl(ConfigHandler.LIQUIFIER.energyCapacity) {
+	val recipeRegister = LiquifierRegister.Companion.INSTANCE.recipes
+
+	val outputTank = FluidTankUtils.create(this, Fluid.BUCKET_VOLUME * 10, false, true, fluidWhitelist = recipeRegister.mapUnique { it.output.fluid }.toTypedArray(), this::markDirtyGUI)
+
+	override val energyPerTick = ConfigHandler.LIQUIFIER.energyPerTick
+	override val recipeTime = ConfigHandler.LIQUIFIER.processingTicks
+
+	override val fluidHandler = outputTank
+
+	init {
+		initInventoryCapability(1, 0)
+	}
+
+	override fun initInventoryInputCapability() {
+		input = object : TileStackHandler(inputSlots, this) {
+			override fun insertItem(slot: Int, stack: ItemStack, simulate: Boolean) =
+				if(recipeRegister.any { it.input.isItemEqual(stack) }) super.insertItem(slot, stack, simulate)
+				else stack
+
+			override fun onContentsChanged(slot: Int) = markDirtyGUI()
+		}
+	}
+
+	override fun updateRecipe() {
+		val inputStack = input.getStackInSlot(0)
+		if(!inputStack.isEmpty
+			&& (currentRecipe == null || !ItemStack.areItemStacksEqual(currentRecipe!!.input, inputStack))
+		) {
+			currentRecipe = recipeRegister.firstOrNull { ItemStack.areItemsEqual(it.input, inputStack) }
+		}
+		if(inputStack.isEmpty) currentRecipe = null
+	}
+
+	override fun onProcessComplete() {
+		outputTank.fillInternal(currentRecipe!!.output.copy(), true)
+		input[0].shrink(currentRecipe!!.input.count)
+	}
+
+	override fun onWorkTick() {
+		energyStorage.extractEnergy(energyPerTick, false)
+	}
+
+	override fun shouldTick() =
+		!input[0].isEmpty
+
+	override fun shouldProcess(): Boolean {
+		val recipeOutput = currentRecipe!!.output
+		return (outputTank.capacity >= outputTank.fluidAmount + recipeOutput.amount
+				&& energyStorage.energyStored >= energyPerTick
+				&& input[0].count >= currentRecipe!!.input.count
+				&& ((outputTank.fluid?.fluid == (recipeOutput.fluid ?: false)) || outputTank.fluid == null))
+	}
+
+	override fun writeToNBT(compound: NBTTagCompound): NBTTagCompound {
+		super.writeToNBT(compound)
+		compound.setTag("OutputTankNBT", outputTank.writeToNBT(NBTTagCompound()))
+		return compound
+	}
+
+	override fun readFromNBT(compound: NBTTagCompound) {
+		super.readFromNBT(compound)
+		outputTank.readFromNBT(compound.getCompoundTag("OutputTankNBT"))
+	}
+}

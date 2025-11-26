@@ -1,0 +1,127 @@
+package org.ender_development.alchemistry.tiles
+
+import net.minecraft.item.ItemStack
+import net.minecraft.nbt.NBTTagCompound
+import org.ender_development.alchemistry.ConfigHandler
+import org.ender_development.alchemistry.blocks.ModBlocks
+import org.ender_development.alchemistry.blocks.PropertyPowerStatus
+import org.ender_development.alchemistry.blocks.machine.ReactorControllerBlock
+import org.ender_development.alchemistry.chemistry.ElementRegistry
+import org.ender_development.alchemistry.client.button.SingleButtonWrapper
+import org.ender_development.alchemistry.items.ModItems
+import org.ender_development.alchemistry.recipes.FusionRecipe
+import org.ender_development.alchemistry.recipes.register.FusionRegister
+import org.ender_development.catalyx.client.button.AbstractButtonWrapper
+import org.ender_development.catalyx.tiles.helper.EnergyTileImpl
+import org.ender_development.catalyx.tiles.helper.IEnergyTile
+import org.ender_development.catalyx.tiles.helper.TileStackHandler
+import org.ender_development.catalyx.utils.extensions.get
+
+class TileFusionController : AbstractReactorController<FusionRecipe>(ReactorType.FUSION, FusionRegister.Companion.INSTANCE), IEnergyTile by EnergyTileImpl(ConfigHandler.FUSION.energyCapacity) {
+	override val guiHeight = 222
+
+	var recipeOutput: ItemStack = ItemStack.EMPTY
+	var singleMode = false
+
+	override val energyPerTick: Int
+		get() = getModifiedEnergyCost(ConfigHandler.FUSION.energyPerTick)
+
+	override val recipeTime: Int
+		get() = getModifiedProcessTime(ConfigHandler.FUSION.processingTicks)
+
+	init {
+		initInventoryCapability(2, 1)
+		loadConfig(ConfigHandler.FUSION.moderators)
+	}
+
+	override fun initInventoryInputCapability() {
+		input = object : TileStackHandler(inputSlots, this) {
+			override fun insertItem(slot: Int, stack: ItemStack, simulate: Boolean) = if(singleMode) {
+				if(getStackInSlot(slot).isEmpty) super.insertItem(slot, stack, simulate)
+				else stack
+			} else if(stack.item == ModItems.elements) super.insertItem(slot, stack, simulate)
+			else stack
+		}
+	}
+
+	override fun updateRecipe() {
+		val meta1 = input[0].metadata
+		val meta2 = input[1].metadata
+		recipeRegister.recipes.firstOrNull { (it.inputMeta1 == meta1 && it.inputMeta2 == meta2) || (it.inputMeta1 == meta2 && it.inputMeta2 == meta1) }?.let {
+			currentRecipe = it
+		}
+		currentRecipe?.let {
+			recipeOutput = ElementRegistry[it.outputMeta]?.toItemStack(1) ?: ItemStack.EMPTY
+		}
+	}
+
+	override fun onProcessComplete() {
+		val (productivity) = currentMultiplier
+		if(productivity > 0) {
+			val stackMultiplier = productivity.toInt() + if(productivity - productivity.toInt() > world.rand.nextDouble()) 1 else 0
+
+			recipeOutput.copy().apply {
+				count = (count * stackMultiplier).coerceIn(0, maxStackSize)
+				output.setOrIncrement(0, this)
+			}
+		}
+		input.decrementSlot(0, 1) //Will refresh the recipe, clearing the recipeOutputs if only 1 stack is left
+		input.decrementSlot(1, 1) //Will refresh the recipe, clearing the recipeOutputs if only 1 stack is left
+	}
+
+	override fun onWorkTick() {
+		energyStorage.extractEnergy(energyPerTick, false)
+	}
+
+	override fun shouldTick() = true
+
+	override fun shouldProcess() = isMultiblockValid
+			&& !input[0].isEmpty
+			&& !input[1].isEmpty
+			&& !recipeOutput.isEmpty
+			&& (ItemStack.areItemsEqual(output[0], recipeOutput) || output[0].isEmpty)
+			&& output[0].count + recipeOutput.count <= recipeOutput.maxStackSize
+			&& energyStorage.energyStored >= energyPerTick
+
+	override fun onIdleTick() {
+		super.onIdleTick()
+
+		if(++checkMultiblockTicks == 20) {
+			updateMultiblock()
+			checkMultiblockTicks = 0
+		}
+		val isActive = !input[0].isEmpty && !input[1].isEmpty && energyStorage.energyStored >= energyPerTick
+		val state = world.getBlockState(pos)
+		if(state.block != ModBlocks.fusionController) return
+		val currentStatus = state.getValue(ReactorControllerBlock.Companion.STATUS)
+		if(isMultiblockValid) {
+			if(isActive) {
+				if(currentStatus != PropertyPowerStatus.ON) world.setBlockState(
+					pos, state.withProperty(ReactorControllerBlock.Companion.STATUS, PropertyPowerStatus.ON)
+				)
+			} else if(currentStatus != PropertyPowerStatus.STANDBY) world.setBlockState(
+				pos, state.withProperty(ReactorControllerBlock.Companion.STATUS, PropertyPowerStatus.STANDBY)
+			)
+			updateModifiers()
+		} else if(currentStatus != PropertyPowerStatus.OFF) world.setBlockState(
+			pos, state.withProperty(ReactorControllerBlock.Companion.STATUS, PropertyPowerStatus.OFF)
+		)
+	}
+
+	override fun writeToNBT(compound: NBTTagCompound): NBTTagCompound {
+		super.writeToNBT(compound)
+		compound.setBoolean("singleMode", singleMode)
+		return compound
+	}
+
+	override fun readFromNBT(compound: NBTTagCompound) {
+		singleMode = compound.getBoolean("singleMode")
+		super.readFromNBT(compound)
+	}
+
+	override fun handleButtonPress(button: AbstractButtonWrapper) {
+		if(button is SingleButtonWrapper)
+			singleMode = !singleMode
+		super.handleButtonPress(button)
+	}
+}

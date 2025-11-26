@@ -3,15 +3,9 @@ package plugins
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import util.AbstractDependency
-import util.Curseforge
-import util.EnumProvider
-import util.Maven
-import util.ModDependency
-import util.Modrinth
-import util.toProvider
+import util.*
 import java.io.File
-import java.util.Properties
+import java.util.*
 
 class DepLoader : Plugin<Project> {
     companion object {
@@ -46,6 +40,7 @@ class DepLoader : Plugin<Project> {
          * The `examplemod` variable is skipped as it is just an example on how to configure a dependency.
          */
         private fun populateDependencies() {
+			dependencies.clear()
             loadedProperties.forEach { (key, value) ->
                 val (providerKey, variableKey) = key.split(".")
                 val provider = providerKey.toProvider()

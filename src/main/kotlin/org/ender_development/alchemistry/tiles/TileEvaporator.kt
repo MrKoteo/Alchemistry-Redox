@@ -1,0 +1,100 @@
+package org.ender_development.alchemistry.tiles
+
+import net.minecraft.nbt.NBTTagCompound
+import net.minecraftforge.common.BiomeDictionary
+import net.minecraftforge.fluids.Fluid
+import org.ender_development.alchemistry.Alchemistry
+import org.ender_development.alchemistry.ConfigHandler
+import org.ender_development.alchemistry.recipes.EvaporatorRecipe
+import org.ender_development.alchemistry.recipes.register.EvaporatorRegister
+import org.ender_development.alchemistry.utils.ConfigUtils
+import org.ender_development.catalyx.tiles.BaseMachineTile
+import org.ender_development.catalyx.tiles.helper.IFluidTile
+import org.ender_development.catalyx.utils.FluidTankUtils
+import org.ender_development.catalyx.utils.extensions.get
+import org.ender_development.catalyx.utils.extensions.mapUnique
+import kotlin.math.roundToInt
+
+class TileEvaporator : BaseMachineTile<EvaporatorRecipe>(Alchemistry), IFluidTile {
+	val recipeRegister = EvaporatorRegister.Companion.INSTANCE.recipes
+
+	val inputTank = FluidTankUtils.create(this, Fluid.BUCKET_VOLUME * 10, true, false, fluidWhitelist = recipeRegister.mapUnique { it.input.fluid }.toTypedArray(), this::markDirtyClient)
+
+	override val energyPerTick = 0
+	override val recipeTime: Int
+		get() = calculateProcessingTime(ConfigHandler.EVAPORATOR.processingTicks)
+
+	override val fluidHandler = inputTank
+
+	init {
+		initInventoryCapability(0, 1)
+	}
+
+	override fun updateRecipe() {
+		val inputStack = inputTank.fluid
+		if((inputStack != null) && (currentRecipe == null || currentRecipe!!.input.fluid == inputStack.fluid)) {
+			currentRecipe = recipeRegister.firstOrNull { it.input.fluid == inputStack.fluid }
+		}
+		if(inputStack == null) currentRecipe = null
+	}
+
+	override fun onProcessComplete() {
+		output.setOrIncrement(0, currentRecipe!!.output.copy())
+		inputTank.drainInternal(currentRecipe!!.input.amount, true)
+	}
+
+	override fun onWorkTick() {}
+
+	override fun shouldTick() =
+		inputTank.fluidAmount > 0
+
+	override fun shouldProcess(): Boolean {
+		val recipeOutput = currentRecipe!!.output
+		return inputTank.fluidAmount >= currentRecipe!!.input.amount
+				&& (inputTank.fluid == null || inputTank.fluid!!.fluid == currentRecipe!!.input.fluid)
+				&& (output[0].isEmpty || output[0].item == currentRecipe!!.output.item)
+				&& output[0].count + recipeOutput.count <= recipeOutput.maxStackSize
+	}
+
+	override fun writeToNBT(compound: NBTTagCompound): NBTTagCompound {
+		super.writeToNBT(compound)
+		compound.setTag("InputTankNBT", inputTank.writeToNBT(NBTTagCompound()))
+		return compound
+	}
+
+	override fun readFromNBT(compound: NBTTagCompound) {
+		super.readFromNBT(compound)
+		inputTank.readFromNBT(compound.getCompoundTag("InputTankNBT"))
+	}
+
+	fun calculateProcessingTime(config: Int) =
+		(config / getHeat()).roundToInt()
+
+	// TODO more elaborate calculation?
+	fun getHeat(): Double {
+		var heat = 1.0
+
+		if(!BiomeDictionary.hasType(world.getBiomeForCoordsBody(pos), BiomeDictionary.Type.DRY))
+			heat = 0.5
+
+		val below = world.getBlockState(pos.down())
+		heatSources.forEach { (block, speed) ->
+			if(block == below)
+				heat *= speed
+		}
+		return heat
+	}
+
+	companion object {
+		val heatSources = ConfigHandler.EVAPORATOR.heatSources.map {
+			val split = it.split(';', ',')
+			if(split.size != 2) {
+				Alchemistry.logger.error("Malformed evaporator heat source - expected 2 sections but found ${split.size}: $it")
+				return@map null
+			}
+			val block = ConfigUtils.parseBlock(split[0]) ?: return@map null
+			val multiplier = split[1].toDouble()
+			block to multiplier
+		}.filterNotNull().toTypedArray()
+	}
+}

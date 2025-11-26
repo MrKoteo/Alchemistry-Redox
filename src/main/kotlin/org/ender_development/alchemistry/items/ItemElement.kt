@@ -1,0 +1,64 @@
+package org.ender_development.alchemistry.items
+
+import net.minecraft.client.renderer.block.model.ModelResourceLocation
+import net.minecraft.client.util.ITooltipFlag
+import net.minecraft.creativetab.CreativeTabs
+import net.minecraft.item.Item
+import net.minecraft.item.ItemStack
+import net.minecraft.util.NonNullList
+import net.minecraft.world.World
+import net.minecraftforge.client.model.ModelLoader
+import net.minecraftforge.event.RegistryEvent
+import net.minecraftforge.fml.relauncher.Side
+import net.minecraftforge.fml.relauncher.SideOnly
+import org.ender_development.alchemistry.chemistry.ChemicalElement
+import org.ender_development.alchemistry.chemistry.ElementRegistry
+import org.ender_development.catalyx.utils.SideUtils
+import org.ender_development.catalyx.utils.extensions.translate
+import java.util.*
+
+class ItemElement(name: String) : ItemMetaBase(name) {
+	override fun register(event: RegistryEvent.Register<Item>) {
+		event.registry.register(this)
+		if(SideUtils.isClient)
+			ElementRegistry.keys().forEach {
+				val element = ElementRegistry[it]
+				val elementName = element?.name?.lowercase(Locale.getDefault()) ?: ""
+				val elementNumber = element?.meta ?: 0
+				ModelLoader.setCustomModelResourceLocation(
+					this, it,
+					ModelResourceLocation(if(elementNumber <= 118) "${registryName}_$elementName" else "$registryName", "inventory")
+				)
+			}
+	}
+
+	@SideOnly(Side.CLIENT)
+	override fun addInformation(stack: ItemStack, playerIn: World?, tooltip: List<String>, advanced: ITooltipFlag) {
+		val element: ChemicalElement? = ElementRegistry[stack.itemDamage]
+		element?.let {
+			(tooltip as MutableList).add("${element.abbreviation} - ${element.meta}")
+		}
+	}
+
+	@SideOnly(Side.CLIENT)
+	override fun getSubItems(tab: CreativeTabs, items: NonNullList<ItemStack>) {
+		if(!isInCreativeTab(tab)) return
+		ElementRegistry.keys().forEach { items.add(ItemStack(this, 1, it)) }
+	}
+
+	override fun getItemStackDisplayName(stack: ItemStack): String {
+		return if(stack.metadata > 118 && stack.item == ModItems.elements) {
+			"${getTranslationKey(stack)}.name".translate()
+		} else super.getItemStackDisplayName(stack)
+	}
+
+	override fun getTranslationKey(stack: ItemStack): String {
+		var i = stack.itemDamage
+		if(!ElementRegistry.keys().contains(i)) i = 1
+		try {
+			return "${super.getTranslationKey()}_${ElementRegistry[i]!!.name.lowercase(Locale.getDefault())}"
+		} catch(e: NullPointerException) {
+			throw NullPointerException("Unable to find translation key for element #[$i]")
+		}
+	}
+}

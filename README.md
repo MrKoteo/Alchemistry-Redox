@@ -1,67 +1,86 @@
-# Catalyx-Template
+# Alchemistry - Redox
 
-Template repo for creating a mod based on [Catalyx](https://github.com/Ender-Development/Catalyx/).
+Alchemistry is a tech mod, inspired by the classic [Minechem](https://www.curseforge.com/minecraft/mc-mods/minechem-archive), that allows you to decompose items into their constituent elements, then recombine them to create new items. This is a fork of the 1.12.2 branch of the [original mod](https://www.curseforge.com/minecraft/mc-mods/alchemistry) and aims to be the definitive 1.12.2 version of the mod. This is achieved by updating dependencies, fixing bugs, and improving the current features.
 
-<a href="https://www.akliz.net/enderman"><img src="https://raw.githubusercontent.com/Ender-Development/Catalyx-Template/refs/heads/master/assets/ender_development/banner.png" align="center"/></a>
+<a href="https://www.akliz.net/enderman"><img src="https://github.com/Ender-Development/PatchouliBooks/raw/master/banner.png" align="center"/></a>
 
-## References
+## Current Changes
 
-This template uses:
-- [RetroFuturaGradle](https://github.com/GTNewHorizons/RetroFuturaGradle)
+- switched build system to [RetroFuturaGradle](https://github.com/GTNewHorizons/RetroFuturaGradle)
+- switched to the latest kotlin version utilizing [Forgelin-Continuous](https://www.curseforge.com/minecraft/mc-mods/forgelin-continuous)
+- rewrote the config system to allow editing the config in-game
+- added a config option that allows Fission and Fusion Reactors' multiblocks to share their respective casings
+- fixed custom compounds and elements not being translatable
+- backported reactor and machine textures from the modern version of the mod
+- backported the interactive periodic table
+- added fission and fusion glass to decorate the reactors
+- reactor cores now emit a small amount of light
+- reators now have their own upgrade system
+- redid all GUI textures, while adding additional functionality to all machines
+- removed AlchemyLib dependency
 
-This template is loosely based on:
-- [CleanroomMC - ForgeDevEnv](https://github.com/CleanroomMC/ForgeDevEnv)
-- [CleanroomMC - TemplateDevEnvKt](https://github.com/CleanroomMC/TemplateDevEnvKt)
-- [GregTechCEu - Buildscripts](https://github.com/GregTechCEu/Buildscripts)
-- [GTNewHorizons - ExampleMod1.7.10](https://github.com/GTNewHorizons/ExampleMod1.7.10)
+## Dependencies
 
-## Dev environment
+![badge](https://img.shields.io/badge/required-Forgelin--Continuous-gray?style=flat-square&labelColor=red&link=https://www.curseforge.com/minecraft/mc-mods/forgelin-continuous)
 
-- default maven repositories
-- default mods for assisting with development
-- everything written in Kotlin
-- easy to configure / update
-- gradle options for version management, GroovyScript options, creating a Reference/Tags class (with stuff like MOD_ID/similar)
-- built-in mixin, coremod and access transformer support
-- credentials are managed locally instead of using environment variables
-- comes with a few handy set-up scripts
+Alchemistry is written in Kotlin, which requires the Forgelin library to be present to run.
 
-## Spotless
+![badge](https://img.shields.io/badge/optional-Patchouli-gray?style=flat-square&labelColor=green&link=https://www.curseforge.com/minecraft/mc-mods/patchouli-rofl-edition)
 
-This template uses [Spotless](https://github.com/diffplug/spotless/tree/main/plugin-gradle#readme) to format code.
-To auto-format code, run the `Apply Spotless` gradle task or execute the `spotlessInstallGitPrePushHook` task to install a git pre-push hook that will format code before each push.
-The formatting rules aren't finalized yet as I still need to talk to roz on what the best rules are for our projects. We also recommend using [IntelliJ IDEA](https://www.jetbrains.com/idea/) as IDE as it has the best Kotlin support,
-along with the [Ktlint](https://plugins.jetbrains.com/plugin/15057-ktlint) plugin to highlight formatting issues in the IDE.
+Alchemistry comes with a Patchouli book that explains the basics of the mod.
 
-## Getting Started
+![badge](https://img.shields.io/badge/optional-HadEnoughItems-gray?style=flat-square&labelColor=green&link=https://www.curseforge.com/minecraft/mc-mods/had-enough-items)
 
-To get started with this template, follow these steps:
-- Click on the "Use this template" button above to create a new repository based on this template.
-- Clone the newly created repository to your local machine, either by using the command line or the integrated Git support in IntelliJ IDEA.
-- Open the project in IntelliJ IDEA.
-- Run the `setupDevEnvironment` gradle task to set up the development environment.
-  - **Note:** You might need to refresh the gradle project in IntelliJ IDEA if the initial task fails for whatever reason.
-  - *Optional:* Run the `spotlessApplyGitPrePushHook` gradle task to install a git pre-push hook that will format code before each push.
-- Tweak the `gradle.properties` file to your liking (e.g., set the mod name, mod id, version, etc.).
-  - **Note:** Don't forget to update the gradle project after changing the `gradle.properties` file.
-- Start coding your mod!
-  - **Note:** If you want to take full advantage of Catalyx, make sure to implement the `ICatalyxMod` interface in your main mod class.
+All recipes are integrated into JEI.
+
+![badge](https://img.shields.io/badge/optional-JSON_Paintings-gray?style=flat-square&labelColor=green&link=https://modrinth.com/mod/json-paintings)
+
+Alchemistry adds a painting that displays the periodic table, given JSON Paintings is present.
+
+![badge](https://img.shields.io/badge/optional-CraftTweaker-gray?style=flat-square&labelColor=green&link=https://www.curseforge.com/minecraft/mc-mods/crafttweaker)
+
+Alchemistry provides CraftTweaker support for all recipes as well as adding custom elements and compounds.
+
+![badge](https://img.shields.io/badge/optional-GroovyScript-gray?style=flat-square&labelColor=green&link=https://www.curseforge.com/minecraft/mc-mods/groovyscript)
+
+The groovy-equivalent of CraftTweaker is also supported.
+
+![badge](https://img.shields.io/badge/optional-Game_Stages-gray?style=flat-square&labelColor=green&link=https://www.curseforge.com/minecraft/mc-mods/game-stages)
+
+The Chemical Combiner recipes can be locked behind Game Stages.
+
+![badge](https://img.shields.io/badge/optional-The_One_Probe-gray?style=flat-square&labelColor=green&link=https://www.curseforge.com/minecraft/mc-mods/the-one-probe-community-edition)
+
+Reactors and the Chemical Combiner display extra information in The One Probe.
+
+## License
+
+Switched license from [MIT](https://mit-license.org) to [GPL-2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html), which allows me to use some assets from the modern version of the mod.
+
+## [Ender-Development](https://github.com/Ender-Development)
+
+Our Team currently includes:
+- `_MasterEnderman_` - Project-Manager, Developer
+- `Klebestreifen` - Developer
+
+You can contact us on our [Discord](https://discord.gg/JF7x2vG).
 
 ## Contributing
 
-Please make sure to read our [contributing guidelines](.github/CONTRIBUTING.md) first.
-Furthermore, you have to agree to our [code of conduct](.github/CODE_OF_CONDUCT.md) if you want to contribute.
+Feel free to contribute to the project. We are always happy about pull requests.
+If you want to help us, you can find potential tasks in the [issue tracker](https://github.com/Ender-Development/Alchemistry/issues).
+Of course, you can also create new issues if you find a bug or have a suggestion for a new feature.
+Should you have any questions, feel free to ask us on [Discord](https://discord.gg/JF7x2vG).
+
+An enormous thank you to [rozbrajaczpoziomow](https://github.com/rozbrajaczpoziomow) for helping us with the project. Without you, this project would not be possible. <3
 
 ## Partnership with Akliz
 
-> It's a pleasure to be partnered with Akliz. Besides being a fantastic server provider, which makes it incredibly easy
-> to set up a server of your choice, they help me to push myself and the quality of my projects to the next level.
-> Furthermore, you can click on the banner below to get a discount. :')
+> It's a pleasure to be partnered with Akliz. Besides being a fantastic server provider, which makes it incredibly easy to set up a server of your choice, they help me to push myself and the quality of my projects to the next level. Furthermore, you can click on the banner below to get a discount. :')
 
-<a href="https://www.akliz.net/enderman"><img src="https://raw.githubusercontent.com/Ender-Development/Catalyx-Template/refs/heads/master/assets/ender_development/partnership.png" align="center"/></a>
+<a href="https://www.akliz.net/enderman"><img src="https://github.com/MasterEnderman/Zerblands-Remastered/raw/master/Akliz_Partner.png" align="center"/></a>
 
 If you aren't located in the [US](https://www.akliz.net/enderman), Akliz now offers servers in:
 
 - [Europe](https://www.akliz.net/enderman-eu)
 - [Oceania](https://www.akliz.net/enderman-oce)
-

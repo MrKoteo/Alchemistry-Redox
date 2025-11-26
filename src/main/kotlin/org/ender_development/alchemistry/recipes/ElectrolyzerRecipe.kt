@@ -1,0 +1,38 @@
+package org.ender_development.alchemistry.recipes
+
+import net.minecraft.item.ItemStack
+import net.minecraft.item.crafting.Ingredient
+import net.minecraftforge.fluids.FluidStack
+import java.util.*
+
+data class ElectrolyzerRecipe(
+	val input: FluidStack,
+	private val _electrolyte: Ingredient,
+	val electrolyteConsumptionChance: Int,
+	private val outputOne: ItemStack,
+	private val outputTwo: ItemStack,
+	private val outputThree: ItemStack = ItemStack.EMPTY,
+	val output3Probability: Int = 50,
+	private val outputFour: ItemStack = ItemStack.EMPTY,
+	val output4Probability: Int = 50
+) : IRecipe {
+	val electrolytes: List<ItemStack>
+		get() = _electrolyte.getMatchingStacks().toList()
+
+	val outputs: List<ItemStack>
+		get():List<ItemStack> = arrayListOf(outputOne, outputTwo, outputThree, outputFour)
+
+	fun calculatedInSlot(index: Int): ItemStack {
+		val random = Random()
+		when(index) {
+			0 -> return outputOne.copy()
+			1 -> return outputTwo.copy()
+			2 -> if(random.nextInt(100) <= output3Probability) return outputThree.copy()
+			3 -> if(random.nextInt(100) <= output4Probability) return outputFour.copy()
+		}
+		return ItemStack.EMPTY
+	}
+
+	fun matchesElectrolyte(target: ItemStack): Boolean =
+		this._electrolyte.getMatchingStacks().any { ItemStack.areItemStacksEqual(it, target) }
+}

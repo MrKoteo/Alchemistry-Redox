@@ -1,0 +1,350 @@
+package org.ender_development.alchemistry
+
+import com.cleanroommc.configanytime.ConfigAnytime
+import net.minecraftforge.common.config.Config
+import net.minecraftforge.common.config.ConfigManager
+import net.minecraftforge.fml.client.event.ConfigChangedEvent
+import net.minecraftforge.fml.common.Mod
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
+
+@Config(modid = Reference.MODID, name = Reference.MODID)
+object ConfigHandler {
+
+	@JvmField
+	@Config.Name("General")
+	@Config.LangKey("config.${Reference.MODID}.general")
+	@Config.Comment("Options that affect the entire mod")
+	val GENERAL = General()
+
+	class General {
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Family Friendly Mode")
+		@Config.Comment("Illegal drug compounds will have their names replaced with more family-friendly versions")
+		var familyFriendlyMode = false
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Enable Automation")
+		@Config.Comment("Enables item automation with hoppers, pipes, etc")
+		var enableAutomation = true
+	}
+
+	@JvmField
+	@Config.Name("Fission Reactor")
+	@Config.LangKey("config.${Reference.MODID}.fission")
+	@Config.Comment("The Fisson Reactor is a multi-block structure that can splits one element into two new elements")
+	val FISSION = Fission()
+
+	class Fission {
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy Capacity")
+		@Config.Comment("Max energy capacity of the Fission Reactor")
+		@Config.RangeInt(min = 1, max = Integer.MAX_VALUE)
+		var energyCapacity = 50000
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy per Tick")
+		@Config.Comment("Energy consumption rate per tick for the Fission Reactor")
+		@Config.RangeInt(min = 1, max = Integer.MAX_VALUE)
+		var energyPerTick = 300
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Processing Ticks")
+		@Config.Comment("Number of ticks per operation for the Fission Reactor")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var processingTicks = 40
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Compact Fission Reactor")
+		@Config.Comment(
+			"If true, Fission Reactors can share casing blocks with adjacent reactors",
+			"This allows up to 4 Fission Reactors to share a single set of casing blocks",
+			"or for rows of reactors to share a wall of casing blocks."
+		)
+		var compactFissionReactor = false
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Moderators")
+		@Config.Comment(
+			"List of moderator blocks/fluids for the Fusion Reactor.",
+			"Values are additive, i.e. if you have 2 diamond blocks with the default config, the final values will be - productivity: 1.1x (10% chance to get an additional drop), processing time: 1.2x (20% slower), energy usage: 1.2x (20% more FE/t)",
+			"Syntax: mod:block:meta;productivity;processing_time;energy_usage (meta is optional, mod is required, if meta is not specified, *any* is assumed)"
+		)
+		var moderators = arrayOf(
+			"minecraft:water;0;-0.02;-0.05",
+			"minecraft:lava;0.2;0.05;0.1",
+			"minecraft:coal_block;0;-0.05;-0.01",
+			"minecraft:diamond_block;0.05;0.1;0.1"
+		)
+
+		@JvmField
+		@Config.Name("Minimum Energy per Tick")
+		@Config.Comment("Minimum energy consumption rate per tick for the Fission Reactor")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var minEnergyPerTick = 0
+	}
+
+	@JvmField
+	@Config.Name("Fusion Reactor")
+	@Config.LangKey("config.${Reference.MODID}.fusion")
+	@Config.Comment("The Fusion Reactor is a multi-block structure that can fuses two elements into a new element")
+	val FUSION = Fusion()
+
+	class Fusion {
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy Capacity")
+		@Config.Comment("Max energy capacity of the Fusion Reactor")
+		@Config.RangeInt(min = 1, max = Integer.MAX_VALUE)
+		var energyCapacity = 50000
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy per Tick")
+		@Config.Comment("Energy consumption rate per tick for the Fusion Reactor")
+		@Config.RangeInt(min = 1, max = Integer.MAX_VALUE)
+		var energyPerTick = 300
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Processing Ticks")
+		@Config.Comment("Number of ticks per operation for the Fusion Reactor")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var processingTicks = 40
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Compact Fusion Reactor")
+		@Config.Comment(
+			"If true, Fusion Reactors can share casing blocks with adjacent reactors",
+			"This allows up to 4 Fusion Reactors to share a single set of casing blocks",
+			"or for rows of reactors to share a wall of casing blocks."
+		)
+		var compactFusionReactor = false
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Moderators")
+		@Config.Comment(
+			"List of moderator blocks/fluids for the Fusion Reactor.",
+			"Values are additive, i.e. if you have 2 diamond blocks with the default config, the final values will be - productivity: 1.1x (10% chance to get an additional drop), processing time: 1.2x (20% slower), energy usage: 1.2x (20% more FE/t)",
+			"Syntax: mod:block:meta;productivity;processing_time;energy_usage (meta is optional, mod is required, if meta is not specified, *any* is assumed)"
+		)
+		var moderators = arrayOf(
+			"minecraft:water;0;-0.02;-0.03",
+			"minecraft:lava;0.2;0.05;0.1",
+			"minecraft:coal_block;0;-0.05;-0.01",
+			"minecraft:diamond_block;0.05;0.1;0.1"
+		)
+
+		@JvmField
+		@Config.Name("Minimum Energy per Tick")
+		@Config.Comment("Minimum energy consumption rate per tick for the Fusion Reactor")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var minEnergyPerTick = 0
+	}
+
+	@JvmField
+	@Config.Name("Combiner")
+	@Config.LangKey("config.${Reference.MODID}.combiner")
+	@Config.Comment("The Combiner creates molecules and items from elements by crafting them together")
+	val COMBINER = Combiner()
+
+	class Combiner {
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy Capacity")
+		@Config.Comment("Max energy capacity of the Combiner")
+		@Config.RangeInt(min = 1, max = Integer.MAX_VALUE)
+		var energyCapacity = 10000
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy per Tick")
+		@Config.Comment("Energy consumption rate per tick for the Combiner")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var energyPerTick = 200
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Processing Ticks")
+		@Config.Comment("Number of ticks per operation for the Combiner")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var processingTicks = 5
+	}
+
+	@JvmField
+	@Config.Name("Dissolver")
+	@Config.LangKey("config.${Reference.MODID}.dissolver")
+	@Config.Comment("The Dissolver creates elements from molecules and items by separating them")
+	val DISSOLVER = Dissolver()
+
+	class Dissolver {
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy Capacity")
+		@Config.Comment("Max energy capacity of the Dissolver")
+		@Config.RangeInt(min = 1, max = Integer.MAX_VALUE)
+		var energyCapacity = 10000
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy per Tick")
+		@Config.Comment("Energy consumption rate per tick for the Dissolver")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var energyPerTick = 100
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Processing Ticks")
+		@Config.Comment("Number of ticks per operation for the Combiner")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var processingTicks = 0
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Speed")
+		@Config.Comment(
+			"The max amount of items that the Dissolver will output each tick.",
+			"Please note: only one element will be outputted per tick, and only the elements from one input are eligible at a time.",
+			"For example: Cellulose (C6 H10 O5) with speed 4 would be outputted like so, with each comma-separated value representing 1 tick [4xC,2xC,4xH,4xH,2xH,4xO,1xO]"
+		)
+		@Config.RangeInt(min = 1, max = 64)
+		var speed = 8
+	}
+
+	@JvmField
+	@Config.Name("Electrolyzer")
+	@Config.LangKey("config.${Reference.MODID}.electrolyzer")
+	@Config.Comment("The Electrolyzer creates elements from fluids by separating them utilizing a catalyst")
+	val ELECTROLYZER = Electrolyzer()
+
+	class Electrolyzer {
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy Capacity")
+		@Config.Comment("Max energy capacity of the Electrolyzer")
+		@Config.RangeInt(min = 1, max = Integer.MAX_VALUE)
+		var energyCapacity = 10000
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy per Tick")
+		@Config.Comment("Energy consumption rate per tick for the Electrolyzer")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var energyPerTick = 100
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Processing Ticks")
+		@Config.Comment("Number of ticks per Electrolyzer operation")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var processingTicks = 10
+	}
+
+	@JvmField
+	@Config.Name("Evaporator")
+	@Config.LangKey("config.${Reference.MODID}.evaporator")
+	@Config.Comment("The Evaporator creates items from fluids by removing the fluid and leaving behind the solid")
+	val EVAPORATOR = Evaporator()
+
+	class Evaporator {
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Processing Ticks")
+		@Config.Comment("The best possible processing time for the Evaporator. In practice it will be increased by biome and influenced by heat sources")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var processingTicks = 160
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Heat Sources")
+		@Config.Comment( // I hate using "speed" again after going through this in fission/fusion reactor modifiers, but whatever
+			"Additional heat sources that can be placed underneath an evaporator to increase its speed",
+			"Syntax: mod:block:meta;speed_multiplier (meta is optional, mod is required, if meta is not specified, *any* is assumed)"
+		)
+		var heatSources = arrayOf(
+			"minecraft:lava;2",
+			"minecraft:torch;1.05"
+		)
+	}
+
+	@JvmField
+	@Config.Name("Atomizer")
+	@Config.LangKey("config.${Reference.MODID}.atomizer")
+	@Config.Comment("The Atomizer transforms liquids into their respective elements and molecules")
+	val ATOMIZER = Atomizer()
+
+	class Atomizer {
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy Capacity")
+		@Config.Comment("Max energy capacity of the Atomizer")
+		@Config.RangeInt(min = 1, max = Integer.MAX_VALUE)
+		var energyCapacity = 10000
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy per Tick")
+		@Config.Comment("Energy consumption rate per tick for the Atomizer")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var energyPerTick = 50
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Processing Ticks")
+		@Config.Comment("Number of ticks per Atomizer operation")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var processingTicks = 100
+	}
+
+	@JvmField
+	@Config.Name("Liquifier")
+	@Config.LangKey("config.${Reference.MODID}.liquifier")
+	@Config.Comment("The Liquifier transforms elements and molecules into their respective liquids")
+	val LIQUIFIER = Liquifier()
+
+	class Liquifier {
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy Capacity")
+		@Config.Comment("Max energy capacity of the Liquifier")
+		@Config.RangeInt(min = 1, max = Integer.MAX_VALUE)
+		var energyCapacity = 10000
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Energy per Tick")
+		@Config.Comment("Energy consumption rate per tick for the Liquifier")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var energyPerTick = 50
+
+		@JvmField
+		@Config.RequiresMcRestart
+		@Config.Name("Processing Ticks")
+		@Config.Comment("Number of ticks per Liquifier operation")
+		@Config.RangeInt(min = 0, max = Integer.MAX_VALUE)
+		var processingTicks = 100
+	}
+
+	@Mod.EventBusSubscriber(modid = Reference.MODID)
+	object ConfigEventHandler {
+		@SubscribeEvent
+		@JvmStatic
+		fun onConfigChangedEvent(event: ConfigChangedEvent.OnConfigChangedEvent) {
+			if(event.modID == Reference.MODID) {
+				ConfigManager.sync(Reference.MODID, Config.Type.INSTANCE)
+			}
+		}
+	}
+
+	init {
+		ConfigAnytime.register(ConfigHandler::class.java)
+	}
+}

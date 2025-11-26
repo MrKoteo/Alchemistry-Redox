@@ -1,0 +1,15 @@
+package org.ender_development.alchemistry.chemistry
+
+import net.minecraft.item.Item
+import net.minecraft.item.ItemStack
+import java.awt.Color
+
+
+interface ICompoundComponent {
+	var color: Color
+	var name: String
+	val item: Item
+	val meta: Int
+	fun toItemStack(quantity: Int): ItemStack
+	fun toAbbreviatedString(): String
+}
