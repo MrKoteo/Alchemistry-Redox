@@ -11,6 +11,10 @@ import plugins.Secrets
 import util.EnumConfiguration
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import org.gradle.api.tasks.Copy
+import org.gradle.language.jvm.tasks.ProcessResources
 
 loadDefaultSetup()
 
@@ -408,6 +412,21 @@ if (propertyBoolean("publish_to_maven")) {
                 groupId = propertyString("root_package")
                 artifactId = propertyString("mod_id")
             }
+        }
+    }
+}
+
+// ========== JSON MINIFIER ==========
+tasks.withType(ProcessResources::class.java).configureEach {
+    doLast {
+        val outputDir = (this as Copy).destinationDir ?: outputs.files.singleFile
+        fileTree(outputDir, mapOf("include" to listOf("**/*.json"))).forEach { f ->
+            try {
+                val slurper = JsonSlurper()
+                val parsed = slurper.parse(f)
+                val minified = JsonOutput.toJson(parsed)
+                f.writeText(minified)
+            } catch (_: Exception) { /* ignore */ }
         }
     }
 }
